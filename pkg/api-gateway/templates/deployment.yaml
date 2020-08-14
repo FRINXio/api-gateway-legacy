@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "api-gateway.fullname" . }}
+  labels:
+    {{- include "api-gateway.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "api-gateway.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "api-gateway.selectorLabels" . | nindent 8 }}
+    spec:
+    {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      serviceAccountName: {{ include "api-gateway.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          # changed {{ .Chart.AppVersion }} to {{ .Values.image.tag }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              # set to 5000 as default
+              containerPort: 5000
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /probe/liveness
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /probe/readiness
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          # env vars which will by read by api-gateway's dotenv
+          # TODO: do I need to paste these? can I copy over "env" from .Values somehow?
+          env:
+            - name: "API_GATEWAY_HOST"
+              value: {{ .Values.apiGateway.env.API_GATEWAY_HOST }}
+            - name: "WORKFLOW_FRONTEND_HOST"
+              value: {{ .Values.apiGateway.env.WORKFLOW_FRONTEND_HOST }}
+            - name: "SESSION_SECRET"
+              value: {{ .Values.apiGateway.env.SESSION_SECRET }}
+            - name: "KEYCLOAK_HOST"
+              value: {{ .Values.apiGateway.env.KEYCLOAK_HOST }}
+            - name: "KEYCLOAK_ADMIN_CLIENT_ID"
+              value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_ID }}
+            - name: "KEYCLOAK_ADMIN_CLIENT_USERNAME"
+              value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_USERNAME }}
+            - name: "KEYCLOAK_ADMIN_CLIENT_PASSWORD"
+              value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_PASSWORD }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}

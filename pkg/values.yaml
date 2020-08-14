@@ -1,0 +1,9 @@
+apiGateway:
+  env:
+    API_GATEWAY_HOST: "localtest.me:5000"
+    WORKFLOW_FRONTEND_HOST: "workflow-frontend:5000"
+    SESSION_SECRET: "example of a secret"
+    KEYCLOAK_HOST: "keycloak-headless:8080"
+    KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
+    KEYCLOAK_ADMIN_CLIENT_USERNAME: "admin"
+    KEYCLOAK_ADMIN_CLIENT_PASSWORD: "admin"
