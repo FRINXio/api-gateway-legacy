@@ -60,6 +60,8 @@ spec:
               value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_USERNAME }}
             - name: "KEYCLOAK_ADMIN_CLIENT_PASSWORD"
               value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_PASSWORD }}
+            - name: "WORKFLOW_PROXY_HOST"
+              value: {{ .Values.apiGateway.env.WORKFLOW_PROXY_HOST }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
