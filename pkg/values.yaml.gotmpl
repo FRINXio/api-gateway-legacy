@@ -7,6 +7,7 @@ apiGateway:
     KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
     KEYCLOAK_ADMIN_CLIENT_USERNAME: {{ .Values.keycloakUser }}
     KEYCLOAK_ADMIN_CLIENT_PASSWORD: {{ .Values.keycloakPassword }}
+    WORKFLOW_PROXY_HOST: "workflow-proxy:8088"
 
 ingress:
   enabled: true

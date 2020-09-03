@@ -5,7 +5,7 @@ EXPOSE 8080
 WORKDIR /api-gateway
 
 COPY service /api-gateway
-
-RUN yarn install
+RUN rm -rf node_modules
+RUN yarn install --frozen-lockfile && yarn cache clean
 
 CMD yarn start
