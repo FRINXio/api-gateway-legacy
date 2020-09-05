@@ -14,6 +14,7 @@ const conf = {
   workflowProxyHost: env.WORKFLOW_PROXY_HOST ?? "workflow-proxy:8088",
   kibanaHost: env.KIBANA_HOST ?? "kibana:5601",
   sessionSecret: env.SESSION_SECRET ?? "example of a secret",
+  resourceManagerHost: env.RESOURCE_MANAGER_HOST ?? "resource-manager:8884",
   tenantClients: {},
   clientId: "api-gateway",
 };

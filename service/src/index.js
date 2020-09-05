@@ -77,6 +77,24 @@ app.get("/", ensureLoggedIn, (req, res) => {
 app.get("/wf", (req, res) => res.redirect("/workflow/frontend/"));
 
 app.all(
+  "/resourcemanager/graphql*",
+  ensureLoggedIn,
+  proxy(`http://${config.resourceManagerHost}`, {
+    proxyReqPathResolver: (req) => {
+      return '/query';
+    },
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["From"] = srcReq.user.username;
+      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+      //resource-manager needs a role but does not use or evaluate it 
+      //thus we provide a dummy value ("NONE") for resource-manager API checks
+      proxyReqOpts.headers["x-auth-user-role"] = 'NONE';
+      return proxyReqOpts;
+    },
+  })
+);
+
+app.all(
   "/workflow/frontend*",
   ensureLoggedIn,
   proxy(`http://${config.workflowFrontendHost}`, {
