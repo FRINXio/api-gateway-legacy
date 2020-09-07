@@ -10,7 +10,11 @@ apiGateway:
     WORKFLOW_PROXY_HOST: "workflow-proxy:8088"
 
 ingress:
+{{ if eq .Environment.Name "local" }}
+  enabled: false
+{{ else }}
   enabled: true
+{{ end }}
   hosts:
     - host: "*.{{ .Values.apiGatewayHost }}"
       paths: [/]
