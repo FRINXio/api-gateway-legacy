@@ -92,6 +92,21 @@ app.all(
 );
 
 app.all(
+  "/resourcemanager/frontend*",
+  ensureLoggedIn,
+  proxy(`http://${config.resourcemanagerFrontendHost}`, {
+    proxyReqPathResolver: (req) => {
+      return req.url;
+    },
+    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+      proxyReqOpts.headers["From"] = srcReq.user.username;
+      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+      return proxyReqOpts;
+    },
+  })
+);
+
+app.all(
   "/workflow/proxy/*",
   ensureLoggedIn,
   proxy(`http://${config.workflowProxyHost}`, {

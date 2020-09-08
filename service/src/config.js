@@ -10,6 +10,7 @@ const conf = {
   keycloakHost: env.KEYCLOAK_HOST ?? "keycloak:8080",
   apiGatewayHost: env.API_GATEWAY_HOST ?? "localtest.me:5000",
   workflowFrontendHost: env.WORKFLOW_FRONTEND_HOST ?? "workflow-frontend:5000",
+  resourcemanagerFrontendHost: env.RESOURCE_MANAGER_FRONTEND_HOST ?? "resource-manager-frontend:5000",
   workflowProxyHost: env.WORKFLOW_PROXY_HOST ?? "workflow-proxy:8088",
   kibanaHost: env.KIBANA_HOST ?? "kibana:5601",
   sessionSecret: env.SESSION_SECRET ?? "example of a secret",
