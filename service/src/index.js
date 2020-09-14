@@ -124,44 +124,44 @@ app.all(
   })
 );
 
-app.all(
-  "/workflow/proxy/*",
-  ensureLoggedIn,
-  proxy(`http://${config.workflowProxyHost}`, {
-    proxyReqPathResolver: (req) => {
-      // remove prefix
-      const path = req.url.substr('/workflow/proxy'.length)
-      return path;
-    },
-    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["From"] = srcReq.user.username;
-      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
-      return proxyReqOpts;
-    },
-  })
-);
-
 // TODO if all of these pieces of code will be the same could we move these
 // to a json file and have them loaded from that?
-app.all(
-  "/kibana*",
-  ensureLoggedIn,
-  proxy(`http://${config.kibanaHost}`, {
-    proxyReqPathResolver: (req) => {
-      // remove prefix
-      const path = req.url.substr('/kibana'.length)
-      return path;
-    },
-    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["From"] = srcReq.user.username;
-      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
-      return proxyReqOpts;
-    },
-  })
-);
+var services = {
+  "workflow/proxy": config.workflowProxyHost,
+  "kibana": config.kibanaHost,
+  "docusaurus": config.docusaurusHost,
+  "voyager": config.voyagerHost
+};
+
+for (let [service, url] of Object.entries(services)) {
+  app.all(
+    "/" + service + "*",
+    ensureLoggedIn,
+    proxy("http://" + url, {
+      proxyReqPathResolver: (req) => {
+        // remove prefix
+        const path = req.url.substr(('/' + service).length);
+        return path;
+      },
+      proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+        proxyReqOpts.headers["From"] = srcReq.user.username;
+        proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+        return proxyReqOpts;
+      },
+    })
+  );
+}
 
 // liveness and readiness probes
 app.get("/probe/liveness", (req, res) => res.sendStatus(200));
 app.get("/probe/readiness", (req, res) => res.sendStatus(200));
+
+app.get("/routes", (req, res) => {
+  let get = app._router.stack.filter(
+      r => r.route && r.route.methods.get).map(r => r.route.path);
+  let post = app._router.stack.filter(
+      r => r.route && r.route.methods.post).map(r => r.route.path);
+  res.send({ get: get, post: post });
+});
 
 app.listen(port, () => console.log(`Listening at http://localhost:${port}`));

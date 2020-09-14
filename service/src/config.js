@@ -13,6 +13,8 @@ const conf = {
   resourcemanagerFrontendHost: env.RESOURCE_MANAGER_FRONTEND_HOST ?? "resource-manager-frontend:5000",
   workflowProxyHost: env.WORKFLOW_PROXY_HOST ?? "workflow-proxy:8088",
   kibanaHost: env.KIBANA_HOST ?? "kibana:5601",
+  docusaurusHost: env.DOCUSAURUS_HOST ?? "docs-docusaurus:3000",
+  voyagerHost: env.VOYAGER_HOST ?? "docs-voyager:8080",
   sessionSecret: env.SESSION_SECRET ?? "example of a secret",
   resourceManagerHost: env.RESOURCE_MANAGER_HOST ?? "resource-manager:8884",
   tenantClients: {},
