@@ -13,6 +13,7 @@ import tenantMiddleware from "./tenantMiddleware";
 import TenantOidcStrategy from "./tenantOidcStrategy";
 import config from "./config";
 import proxy from "express-http-proxy"
+import {groupsForUser, rolesForUser} from "./keycloakClient";
 
 const app = express();
 const port = 5000;
@@ -33,7 +34,7 @@ passport.deserializeUser((user, done) => done(null, user));
 
 // TODO: redirect successful login to whatever page the user was trying to view
 
-function ensureLoggedIn (req, res, next) {
+function ensureLoggedIn(req, res, next) {
   if (req.isAuthenticated()) {
     next();
   } else {
@@ -41,9 +42,45 @@ function ensureLoggedIn (req, res, next) {
   }
 }
 
+const userIdHeaderKey = "From";
+const tenantIdHeaderKey = "x-tenant-id";
+const userRolesHeaderKey = "x-auth-user-role";
+const userGroupsHeaderKey = "x-auth-user-group";
+
+function attachBaseIdentity(proxyReqOpts, srcReq) {
+  proxyReqOpts.headers[userIdHeaderKey] = srcReq.user.username;
+  proxyReqOpts.headers[tenantIdHeaderKey] = srcReq.user.tenant;
+}
+
+async function attachBaseIdentityAsync(proxyReqOpts, srcReq) {
+  try {
+    attachBaseIdentity(proxyReqOpts, srcReq);
+  } catch (e) {
+    console.log("Unable to load user or tenant id", e);
+    throw e;
+  }
+}
+
+async function attachExtendedIdentity(proxyReqOpts, srcReq) {
+  try {
+    proxyReqOpts.headers[userRolesHeaderKey] = await rolesForUser(srcReq.user.tenant, srcReq.user.username);
+    proxyReqOpts.headers[userGroupsHeaderKey] = await groupsForUser(srcReq.user.tenant, srcReq.user.username);
+  } catch (e) {
+    console.log("Unable to load roles and groups for user", e);
+    throw e;
+  }
+}
+
+// Promise based http proxy decorator that attaches extended identity info to the request (including groups/roles)
+async function extendedIdentityProxyDecorator(proxyReqOpts, srcReq) {
+  await attachBaseIdentityAsync(proxyReqOpts, srcReq);
+  await attachExtendedIdentity(proxyReqOpts, srcReq);
+  return proxyReqOpts
+}
+
 function formatRequestAuthHeaders(req, res, next) {
-  req.set("From", req.user.username);
-  req.set("x-tenant-id", req.user.tenant);
+  req.set(userIdHeaderKey, req.user.username);
+  req.set(tenantIdHeaderKey, req.user.tenant);
   next();
 }
 
@@ -83,14 +120,7 @@ app.all(
     proxyReqPathResolver: (req) => {
       return '/query';
     },
-    proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["From"] = srcReq.user.username;
-      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
-      //resource-manager needs a role but does not use or evaluate it 
-      //thus we provide a dummy value ("NONE") for resource-manager API checks
-      proxyReqOpts.headers["x-auth-user-role"] = 'NONE';
-      return proxyReqOpts;
-    },
+    proxyReqOptDecorator: extendedIdentityProxyDecorator
   })
 );
 
@@ -102,8 +132,7 @@ app.all(
       return req.url;
     },
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["From"] = srcReq.user.username;
-      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+      attachBaseIdentity(proxyReqOpts, srcReq);
       return proxyReqOpts;
     },
   })
@@ -117,8 +146,7 @@ app.all(
       return req.url;
     },
     proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-      proxyReqOpts.headers["From"] = srcReq.user.username;
-      proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+      attachBaseIdentity(proxyReqOpts, srcReq);
       return proxyReqOpts;
     },
   })
@@ -127,7 +155,6 @@ app.all(
 // TODO if all of these pieces of code will be the same could we move these
 // to a json file and have them loaded from that?
 var services = {
-  "workflow/proxy": config.workflowProxyHost,
   "kibana": config.kibanaHost,
   "docusaurus": config.docusaurusHost,
   "voyager": config.voyagerHost
@@ -138,16 +165,34 @@ for (let [service, url] of Object.entries(services)) {
     "/" + service + "*",
     ensureLoggedIn,
     proxy("http://" + url, {
-      proxyReqPathResolver: (req) => {
+      proxyReqPathResolver: function (req) {
         // remove prefix
         const path = req.url.substr(('/' + service).length);
         return path;
       },
       proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-        proxyReqOpts.headers["From"] = srcReq.user.username;
-        proxyReqOpts.headers["x-tenant-id"] = srcReq.user.tenant;
+        attachBaseIdentity(proxyReqOpts, srcReq);
         return proxyReqOpts;
       },
+    })
+  );
+}
+
+var servicesWithExtendedIdentity = {
+  "workflow/proxy": config.workflowProxyHost,
+};
+
+for (let [service, url] of Object.entries(servicesWithExtendedIdentity)) {
+  app.all(
+    "/" + service + "*",
+    ensureLoggedIn,
+    proxy("http://" + url, {
+      proxyReqPathResolver: function (req) {
+        // remove prefix
+        const path = req.url.substr(('/' + service).length);
+        return path;
+      },
+      proxyReqOptDecorator: extendedIdentityProxyDecorator,
     })
   );
 }
@@ -158,10 +203,10 @@ app.get("/probe/readiness", (req, res) => res.sendStatus(200));
 
 app.get("/routes", (req, res) => {
   let get = app._router.stack.filter(
-      r => r.route && r.route.methods.get).map(r => r.route.path);
+    r => r.route && r.route.methods.get).map(r => r.route.path);
   let post = app._router.stack.filter(
-      r => r.route && r.route.methods.post).map(r => r.route.path);
-  res.send({ get: get, post: post });
+    r => r.route && r.route.methods.post).map(r => r.route.path);
+  res.send({get: get, post: post});
 });
 
 app.listen(port, () => console.log(`Listening at http://localhost:${port}`));

@@ -24,6 +24,6 @@
   },
   "scripts": {
     "start": "node --unhandled-rejections=strict -r @babel/register src/index.js",
-    "start:dev": "nodemon --exitcrash --unhandled-rejections=strict -w ./src -w .env -r @babel/register src/index.js"
+    "start:dev": "nodemon --inspect=0.0.0.0:9230 --exitcrash --unhandled-rejections=strict -w ./src -w .env -r @babel/register src/index.js"
   }
 }
