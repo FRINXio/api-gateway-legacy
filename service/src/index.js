@@ -44,8 +44,8 @@ function ensureLoggedIn(req, res, next) {
 
 const userIdHeaderKey = "From";
 const tenantIdHeaderKey = "x-tenant-id";
-const userRolesHeaderKey = "x-auth-user-role";
-const userGroupsHeaderKey = "x-auth-user-group";
+const userRolesHeaderKey = "x-auth-user-roles";
+const userGroupsHeaderKey = "x-auth-user-groups";
 
 function attachBaseIdentity(proxyReqOpts, srcReq) {
   proxyReqOpts.headers[userIdHeaderKey] = srcReq.user.username;
@@ -63,8 +63,12 @@ async function attachBaseIdentityAsync(proxyReqOpts, srcReq) {
 
 async function attachExtendedIdentity(proxyReqOpts, srcReq) {
   try {
-    proxyReqOpts.headers[userRolesHeaderKey] = await rolesForUser(srcReq.user.tenant, srcReq.user.username);
-    proxyReqOpts.headers[userGroupsHeaderKey] = await groupsForUser(srcReq.user.tenant, srcReq.user.username);
+    let rolesGroups = await Promise.all([
+      rolesForUser(srcReq.user.tenant, srcReq.user.username),
+      groupsForUser(srcReq.user.tenant, srcReq.user.username),
+    ]);
+    proxyReqOpts.headers[userRolesHeaderKey] = rolesGroups[0];
+    proxyReqOpts.headers[userGroupsHeaderKey] = rolesGroups[1];
   } catch (e) {
     console.log("Unable to load roles and groups for user", e);
     throw e;
@@ -73,8 +77,10 @@ async function attachExtendedIdentity(proxyReqOpts, srcReq) {
 
 // Promise based http proxy decorator that attaches extended identity info to the request (including groups/roles)
 async function extendedIdentityProxyDecorator(proxyReqOpts, srcReq) {
-  await attachBaseIdentityAsync(proxyReqOpts, srcReq);
-  await attachExtendedIdentity(proxyReqOpts, srcReq);
+  await Promise.all([
+    attachBaseIdentityAsync(proxyReqOpts, srcReq),
+    attachExtendedIdentity(proxyReqOpts, srcReq),
+  ]);
   return proxyReqOpts
 }
 
@@ -165,7 +171,7 @@ for (let [service, url] of Object.entries(services)) {
     "/" + service + "*",
     ensureLoggedIn,
     proxy("http://" + url, {
-      proxyReqPathResolver: function (req) {
+      proxyReqPathResolver: (req) => {
         // remove prefix
         const path = req.url.substr(('/' + service).length);
         return path;
@@ -187,7 +193,7 @@ for (let [service, url] of Object.entries(servicesWithExtendedIdentity)) {
     "/" + service + "*",
     ensureLoggedIn,
     proxy("http://" + url, {
-      proxyReqPathResolver: function (req) {
+      proxyReqPathResolver: (req) => {
         // remove prefix
         const path = req.url.substr(('/' + service).length);
         return path;
