@@ -12,8 +12,8 @@ import session from "express-session";
 import tenantMiddleware from "./tenantMiddleware";
 import TenantOidcStrategy from "./tenantOidcStrategy";
 import config from "./config";
-import proxy from "express-http-proxy"
-import {groupsForUser, rolesForUser} from "./keycloakClient";
+import proxy from "express-http-proxy";
+import { groupsForUser, rolesForUser } from "./keycloakClient";
 
 const app = express();
 const port = 5000;
@@ -21,7 +21,7 @@ const port = 5000;
 app.use(
   session({
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     secret: config.sessionSecret,
   })
 );
@@ -81,7 +81,7 @@ async function extendedIdentityProxyDecorator(proxyReqOpts, srcReq) {
     attachBaseIdentityAsync(proxyReqOpts, srcReq),
     attachExtendedIdentity(proxyReqOpts, srcReq),
   ]);
-  return proxyReqOpts
+  return proxyReqOpts;
 }
 
 function formatRequestAuthHeaders(req, res, next) {
@@ -110,12 +110,37 @@ app.get("/login/oidc/callback", (req, res, next) => {
     successRedirect: "/login/success",
     failureRedirect: "/login/failed",
   })(req, res, next);
-})
-
-app.get("/", ensureLoggedIn, (req, res) => {
-  res.send(`SUCCESS. User: ${JSON.stringify(req.user)}`);
 });
 
+app.get("/logout", (req, res) => {
+  let tenant = req.user.tenant;
+  let redirectUri = encodeURI(`http://${tenant}.${config.apiGatewayHost}/`);
+  let logoutUri = `${config.keycloakFrontendUrl}/realms/${tenant}/protocol/openid-connect/logout?redirect_uri=${redirectUri}`;
+  req.logout();
+  res.redirect(logoutUri);
+});
+
+app.get("/", (req, res) => {
+  if (req.isAuthenticated()) {
+    res.send(`
+      <h1> ${req.user.tenant} </h1>
+      <hr />
+      <p>
+        Hello, ${req.user.username}
+        <br /><br />
+        <a href="/wf">workflows</a>
+        <br /><br />
+        <a href="/kibana">kibana</a>
+        <br /><br />
+        <a href="/logout">logout</a>
+      </p>
+    `);
+  } else {
+    res.send(`
+      <a href="/login/oidc">login</a>
+    `);
+  }
+});
 
 app.get("/wf", (req, res) => res.redirect("/workflow/frontend/"));
 
@@ -124,9 +149,9 @@ app.all(
   ensureLoggedIn,
   proxy(`http://${config.resourceManagerHost}`, {
     proxyReqPathResolver: (req) => {
-      return '/query';
+      return "/query";
     },
-    proxyReqOptDecorator: extendedIdentityProxyDecorator
+    proxyReqOptDecorator: extendedIdentityProxyDecorator,
   })
 );
 
@@ -161,9 +186,9 @@ app.all(
 // TODO if all of these pieces of code will be the same could we move these
 // to a json file and have them loaded from that?
 var services = {
-  "kibana": config.kibanaHost,
-  "docusaurus": config.docusaurusHost,
-  "voyager": config.voyagerHost
+  kibana: config.kibanaHost,
+  docusaurus: config.docusaurusHost,
+  voyager: config.voyagerHost,
 };
 
 for (let [service, url] of Object.entries(services)) {
@@ -173,7 +198,7 @@ for (let [service, url] of Object.entries(services)) {
     proxy("http://" + url, {
       proxyReqPathResolver: (req) => {
         // remove prefix
-        const path = req.url.substr(('/' + service).length);
+        const path = req.url.substr(("/" + service).length);
         return path;
       },
       proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
@@ -195,7 +220,7 @@ for (let [service, url] of Object.entries(servicesWithExtendedIdentity)) {
     proxy("http://" + url, {
       proxyReqPathResolver: (req) => {
         // remove prefix
-        const path = req.url.substr(('/' + service).length);
+        const path = req.url.substr(("/" + service).length);
         return path;
       },
       proxyReqOptDecorator: extendedIdentityProxyDecorator,
@@ -208,11 +233,13 @@ app.get("/probe/liveness", (req, res) => res.sendStatus(200));
 app.get("/probe/readiness", (req, res) => res.sendStatus(200));
 
 app.get("/routes", (req, res) => {
-  let get = app._router.stack.filter(
-    r => r.route && r.route.methods.get).map(r => r.route.path);
-  let post = app._router.stack.filter(
-    r => r.route && r.route.methods.post).map(r => r.route.path);
-  res.send({get: get, post: post});
+  let get = app._router.stack
+    .filter((r) => r.route && r.route.methods.get)
+    .map((r) => r.route.path);
+  let post = app._router.stack
+    .filter((r) => r.route && r.route.methods.post)
+    .map((r) => r.route.path);
+  res.send({ get: get, post: post });
 });
 
 app.listen(port, () => console.log(`Listening at http://localhost:${port}`));

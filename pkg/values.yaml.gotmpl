@@ -4,6 +4,7 @@ apiGateway:
     WORKFLOW_FRONTEND_HOST: {{ .Values.workflowFrontendHost }}
     SESSION_SECRET: {{ .Values.sessionSecret }}
     KEYCLOAK_HOST: {{ .Values.keycloakHost }}
+    KEYCLOAK_FRONTEND_URL: {{ .Values.keycloakFrontendUrl }}
     KEYCLOAK_ADMIN_CLIENT_ID: "admin-cli"
     KEYCLOAK_ADMIN_CLIENT_USERNAME: {{ .Values.keycloakUser }}
     KEYCLOAK_ADMIN_CLIENT_PASSWORD: {{ .Values.keycloakPassword }}

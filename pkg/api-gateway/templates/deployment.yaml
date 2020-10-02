@@ -54,6 +54,8 @@ spec:
               value: {{ .Values.apiGateway.env.SESSION_SECRET }}
             - name: "KEYCLOAK_HOST"
               value: {{ .Values.apiGateway.env.KEYCLOAK_HOST }}
+            - name: "KEYCLOAK_FRONTEND_URL"
+              value: {{ .Values.apiGateway.env.KEYCLOAK_FRONTEND_URL }}
             - name: "KEYCLOAK_ADMIN_CLIENT_ID"
               value: {{ .Values.apiGateway.env.KEYCLOAK_ADMIN_CLIENT_ID }}
             - name: "KEYCLOAK_ADMIN_CLIENT_USERNAME"
