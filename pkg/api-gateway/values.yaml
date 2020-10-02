@@ -7,10 +7,7 @@ replicaCount: 1
 image:
   repository: facebookconnectivity-hub-docker.jfrog.io/api_gateway
   tag: latest
-  # set to "Always" because using "latest" tag
-  # https://github.com/kubernetes/kubernetes/issues/47775
   pullPolicy: Always
-  # pullPolicy: IfNotPresent
 
 imagePullSecrets:
   - name: artifactory
