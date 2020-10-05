@@ -67,8 +67,8 @@ async function attachExtendedIdentity(proxyReqOpts, srcReq) {
       rolesForUser(srcReq.user.tenant, srcReq.user.username),
       groupsForUser(srcReq.user.tenant, srcReq.user.username),
     ]);
-    proxyReqOpts.headers[userRolesHeaderKey] = rolesGroups[0];
-    proxyReqOpts.headers[userGroupsHeaderKey] = rolesGroups[1];
+    proxyReqOpts.headers[userRolesHeaderKey] = rolesGroups[0].join(',');
+    proxyReqOpts.headers[userGroupsHeaderKey] = rolesGroups[1].join(',');
   } catch (e) {
     console.log("Unable to load roles and groups for user", e);
     throw e;
