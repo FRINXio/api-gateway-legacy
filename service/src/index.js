@@ -38,6 +38,7 @@ function ensureLoggedIn(req, res, next) {
   if (req.isAuthenticated()) {
     next();
   } else {
+    setLoggingSuccessRedirectUri(req);
     res.redirect("/login/oidc");
   }
 }
@@ -98,7 +99,9 @@ app.get(
 );
 
 app.get("/login/success", (req, res) => {
-  res.redirect("/");
+  let redirectUri = getLoggingSuccessRedirectUri(req);
+  clearLoggingSuccessRedirectUri(req);
+  res.redirect(redirectUri);
 });
 
 app.get("/login/failed", (req, res) => {
@@ -111,6 +114,28 @@ app.get("/login/oidc/callback", (req, res, next) => {
     failureRedirect: "/login/failed",
   })(req, res, next);
 });
+
+/**
+ * Sets the redirect uri to be used after successful log in.
+ */
+function setLoggingSuccessRedirectUri(req) {
+  req.session.redirectTo = req.originalUrl;
+}
+
+/**
+ * Gets the redirect uri to be used after successful log in.
+ * Defaults to "/".
+ */
+function getLoggingSuccessRedirectUri(req) {
+  return req.session.redirectTo ?? "/";
+}
+
+/**
+ * Clears the redirect uri to be used after successful log in.
+ */
+function clearLoggingSuccessRedirectUri(req) {
+  req.session.redirectTo = null;
+}
 
 app.get("/logout", (req, res) => {
   let tenant = req.user.tenant;
