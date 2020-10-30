@@ -1,3 +1,5 @@
+REGISTRY: {{ env "REGISTRY" | default "facebookconnectivity-hub-docker.jfrog.io" | quote }}
+
 apiGateway:
   env:
     API_GATEWAY_HOST: "localtest.me:5000"

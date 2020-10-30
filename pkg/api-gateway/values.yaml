@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: facebookconnectivity-hub-docker.jfrog.io/api_gateway
+  name: api_gateway
   tag: latest
   pullPolicy: Always
 
