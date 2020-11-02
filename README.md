@@ -27,14 +27,14 @@ cd integration
 
 docker-compose build api_gateway
 
-docker tag integration_api_gateway facebookconnectivity-hub-docker.jfrog.io/api_gateway
+docker tag integration_api_gateway your_docker_url/api_gateway
 
-docker push facebookconnectivity-hub-docker.jfrog.io/api_gateway
+docker push your_docker_url/api_gateway
 ```
 
 Create kubernetes secret with docker repo creds:
 ```
-kubectl create secret docker-registry artifactory --docker-server=facebookconnectivity-hub-docker.jfrog.io --docker-username=username --docker-password=password --docker-email=email
+kubectl create secret docker-registry artifactory --docker-server=your_docker_url --docker-username=username --docker-password=password --docker-email=email
 ```
 
 In the pkg folder:
@@ -48,15 +48,6 @@ helm install -f values.yaml api-gateway api-gateway-0.1.0.tgz
 helm upgrade -f values.yaml api-gateway api-gateway-0.1.0.tgz
 
 helm uninstall api-gateway
-```
-
-Push a chart:
-```
-helm repo add hub-helm https://facebookconnectivity.jfrog.io/artifactory/hub-helm --username kengarber --password ******
-
-helm repo add hub-helm-virtual https://facebookconnectivity.jfrog.io/artifactory/hub-helm-virtual --username kengarber --password ******
-
-helm push-artifactory api-gateway-0.1.0.tgz hub-helm
 ```
 
 Useful commands:
