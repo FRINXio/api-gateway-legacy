@@ -23,6 +23,7 @@ const conf = {
   tenantClients: {},
   clientId: "api-gateway",
 };
+console.log('Starting with configuration', {conf});
 
 async function pollKeycloak() {
   const cli = kClient.raw;

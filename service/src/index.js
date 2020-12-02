@@ -91,12 +91,11 @@ function formatRequestAuthHeaders(req, res, next) {
   next();
 }
 
-app.get(
-  "/login/oidc",
+app.get('/login/oidc', (req, res, next) => {
   passport.authenticate("oidc", {
     failureRedirect: "/login/failed",
-  })
-);
+  })(req, res, next);
+});
 
 app.get("/login/success", (req, res) => {
   let redirectUri = getLoggingSuccessRedirectUri(req);
