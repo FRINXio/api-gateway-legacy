@@ -152,9 +152,9 @@ app.get("/", (req, res) => {
       <p>
         Hello, ${req.user.username}
         <br /><br />
-        <a href="/wf">workflows</a>
+        <a href="/wf">Workflows</a>
         <br /><br />
-        <a href="/kibana">kibana</a>
+        <a href="/resourcemanager/frontend">Resource Manager</a>
         <br /><br />
         <a href="/logout">logout</a>
       </p>
