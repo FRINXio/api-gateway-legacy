@@ -30,7 +30,7 @@ export default class TenantOidcStrategy extends Strategy {
       const strategy = await this._getStrategy(req.tenant);
       strategy.authenticate(req, options);
     })().catch((_error) => {
-      console.log('makeOidcStrategy', { keycloakConfigUrl });
+      console.log('makeOidcStrategy', { _error });
       this.error();
     });
   }
